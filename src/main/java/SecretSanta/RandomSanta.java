@@ -1,3 +1,5 @@
+package SecretSanta;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -16,6 +18,8 @@ public class RandomSanta {
 
         List<String> names2 = new ArrayList<>(names);
         List<String> mergedList = new ArrayList<>();
+
+        Collections.shuffle(names2);
 
         for (int i = 0; i < names.size(); i++) {
             String name1 = names.get(i);

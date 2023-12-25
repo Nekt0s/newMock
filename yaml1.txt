@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mypod32112312123
+spec:
+  containers:
+  - name: mycontainer
+    image: nginx312312312

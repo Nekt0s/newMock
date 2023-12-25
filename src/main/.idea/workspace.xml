@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="de7614c4-4456-48bd-b058-58bbc5f0796d" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/../../.idea/uiDesigner.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../deployment-fssp-ms-adapter-ucp-data-search-deploymentNT.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../deployment-fssp-ms-adapter-ucp-data-search-deploymentPROM.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../nt.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../prom.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/java/org/example/sber/MyErrorController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/java/org/example/sber/YamlFileComparator.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/java/org/example/sber/YamlFileComparatorApplication.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/java/org/example/sber/YamlFileComparatorController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/java/org/example/sber/YamlFileComparatorV2.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/resources/application.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/resources/static/index.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../yaml1.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../yaml2.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../yaml3.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../yaml4.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../../pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/RandomSanta.java" beforeDir="false" afterPath="$PROJECT_DIR$/java/SecretSanta/RandomSanta.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/SecretSanta.txt" beforeDir="false" afterPath="$PROJECT_DIR$/java/SecretSanta/SecretSanta.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/SecretSantaGame.class" beforeDir="false" afterPath="$PROJECT_DIR$/java/SecretSanta/SecretSantaGame.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/SecretSantaGame.exe" beforeDir="false" afterPath="$PROJECT_DIR$/java/SecretSanta/SecretSantaGame.exe" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/SecretSantaGame.jar" beforeDir="false" afterPath="$PROJECT_DIR$/java/SecretSanta/SecretSantaGame.jar" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/SecretSantaGame.java" beforeDir="false" afterPath="$PROJECT_DIR$/java/SecretSanta/SecretSantaGame.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/org/example/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/java/org/example/Main.java" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
+  </component>
+  <component name="ProjectId" id="2a1VObqZ6hUv5YlWwVYKkJntoi6" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "last_opened_file_path": "C:/Users/50441/IdeaProjects/newMock/src/main",
+    "project.structure.last.edited": "Project",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.0"
+  }
+}]]></component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="de7614c4-4456-48bd-b058-58bbc5f0796d" name="Changes" comment="" />
+      <created>1703486040696</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1703486040696</updated>
+    </task>
+    <servers />
+  </component>
+</project>

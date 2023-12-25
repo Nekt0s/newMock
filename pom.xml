@@ -16,8 +16,8 @@
     <version>1.0-SNAPSHOT</version>
 
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.source>20</maven.compiler.source>
+        <maven.compiler.target>20</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -28,6 +28,18 @@
         </dependency>
 
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.jayway.jsonpath</groupId>
+            <artifactId>json-path</artifactId>
+            <version>2.6.0</version>
+        </dependency>
+
+
+        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
@@ -36,6 +48,56 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.15.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.12.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>1.29</version>
+        </dependency>
+        <dependency>
+            <groupId>name.finsterwalder</groupId>
+            <artifactId>fileutils</artifactId>
+            <version>1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>name.finsterwalder</groupId>
+            <artifactId>fileutils</artifactId>
+            <version>1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>name.finsterwalder</groupId>
+            <artifactId>fileutils</artifactId>
+            <version>1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>name.finsterwalder</groupId>
+            <artifactId>fileutils</artifactId>
+            <version>1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.pityka</groupId>
+            <artifactId>fileutils_2.12</artifactId>
+            <version>1.2.5</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.pityka</groupId>
+            <artifactId>fileutils_2.12</artifactId>
+            <version>1.2.5</version>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
         </dependency>
     </dependencies>
 
@@ -55,5 +117,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>

@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.*;
 
 @RestController
 class YamlFileComparatorController {
@@ -33,21 +33,12 @@ class YamlFileComparatorController {
         StringBuilder htmlBuilder = new StringBuilder();
         htmlBuilder.append("<html><body style=\"background-color: #332f2c; color: white; display: flex;\">");
 
-        // Блок для первого файла
+        // Блок для обоих файлов
         htmlBuilder.append("<div style=\"flex: 1; padding-right: 10px;\">");
-        htmlBuilder.append("<h1>").append("Сравнение конфигов: NT</h1>");
-        htmlBuilder.append("<pre>").append(formatAsTable(file1Lines)).append("</pre>");
+        htmlBuilder.append("<h1>").append("Сравнение конфигов: NT и PROM</h1>");
+        htmlBuilder.append("<pre>").append(formatAsTable(file1Lines, file2Lines)).append("</pre>");
         htmlBuilder.append("<form action=\"/\" method=\"get\">");
         htmlBuilder.append("<button type=\"submit\" style=\"background-color: black; color: white;\">Вернуться на главную страницу</button>");
-        htmlBuilder.append("</form>");
-        htmlBuilder.append("</div>");
-
-        // Блок для второго файла с явным margin-left
-        htmlBuilder.append("<div style=\"flex: 1; margin-left: -800px;\">");
-        htmlBuilder.append("<h1>").append("Сравнение конфигов: PROM</h1>");
-        htmlBuilder.append("<pre>").append(formatAsTable(file2Lines)).append("</pre>");
-        htmlBuilder.append("<form action=\"/\" method=\"get\">");
-        //htmlBuilder.append("<button type=\"submit\" style=\"background-color: black; color: white;\">Вернуться на главную страницу</button>");
         htmlBuilder.append("</form>");
         htmlBuilder.append("</div>");
 
@@ -56,33 +47,128 @@ class YamlFileComparatorController {
         return htmlBuilder.toString();
     }
 
-    private String formatAsTable(List<String> lines) {
+    private String formatAsTable(List<String> file1Lines, List<String> file2Lines) {
+        Set<String> uniqueNames = new HashSet<>();
+        Set<String> uniqueWords = new HashSet<>();
+
         StringBuilder tableBuilder = new StringBuilder();
         tableBuilder.append("<table border=\"1\" style=\"border-collapse: collapse;\">");
 
-        for (String line : lines) {
-            String colorStyle = "";
+        // Добавляем заголовок таблицы
+        tableBuilder.append("<tr>");
+        tableBuilder.append("<th>Variable</th>");
+        tableBuilder.append("<th>Value 1</th>");
+        tableBuilder.append("<th>Value 2</th>");
+        tableBuilder.append("</tr>");
 
-            // Если строка содержит "cpu:", проверяем, одинаковы ли значения в обоих файлах
-            if (line.contains("cpu:")) {
-                String cpuValue = extractCpuValue(line);
-                String correspondingLine = findCorrespondingLine(lines, line);
-                String correspondingCpuValue = extractCpuValue(correspondingLine);
+        // Итерируем по строкам из обоих файлов
+        for (int i = 0; i < Math.max(file1Lines.size(), file2Lines.size()); i++) {
+            String line1 = i < file1Lines.size() ? file1Lines.get(i) : "";
+            String line2 = i < file2Lines.size() ? file2Lines.get(i) : "";
 
-                // Если значения различны, выделяем строку красным цветом
-                if (!cpuValue.equals(correspondingCpuValue)) {
-                    colorStyle = "background-color: red; color: white;";
+            // Если строки отличаются или содержат "name", добавляем в таблицу
+            if (!Objects.equals(line1, line2) || line1.contains("name")) {
+                // Извлекаем переменную и значения из строк
+                String variable1 = extractVariable(line1);
+                String value1 = extractValue(line1);
+
+                String variable2 = extractVariable(line2);
+                String value2 = extractValue(line2);
+
+                if (line1.contains("name")) {
+                    variable1 = formatUniqueWords(variable1, uniqueNames);
                 }
-            }
 
-            // Добавляем строку в таблицу с применением стилей цвета
-            tableBuilder.append("<tr><td style=\"").append(colorStyle).append("\">").append(line).append("</td></tr>");
+                if (line2.contains("name")) {
+                    variable2 = formatUniqueWords(variable2, uniqueNames);
+                }
+
+                tableBuilder.append("<tr>");
+                tableBuilder.append("<td>").append(variable1).append("</td>");
+                tableBuilder.append("<td>").append(value1).append("</td>");
+                tableBuilder.append("<td>").append(value2).append("</td>");
+                tableBuilder.append("</tr>");
+            }
         }
 
         tableBuilder.append("</table>");
         return tableBuilder.toString();
     }
 
+    private String extractVariable(String line) {
+        // Извлекаем название переменной
+        int colonIndex = line.indexOf(":");
+        if (colonIndex != -1) {
+            return line.substring(0, colonIndex).trim();
+        }
+        return "";
+    }
+
+    private String extractValue(String line) {
+        // Извлекаем значение переменной
+        int colonIndex = line.indexOf(":");
+        if (colonIndex != -1) {
+            return line.substring(colonIndex + 1).trim();
+        }
+        return "";
+    }
+
+
+    private String formatUniqueWords(String line, Set<String> uniqueWords) {
+        StringBuilder formattedLine = new StringBuilder();
+
+        // Заменяем символы пробела на неразрывной пробел, удаляем пробелы в начале и конце строки
+        String[] words = line.trim().split("\\s+");
+        for (String word : words) {
+            if (uniqueWords.add(word)) {
+                formattedLine.append(word).append(" ");
+            } else {
+                // Значение уже присутствует в множестве, добавим его вместе с пробелом
+                formattedLine.append(word).append(" ");
+            }
+        }
+
+        return formattedLine.toString().trim().replaceAll(" ", "&nbsp;");
+    }
+
+
+
+
+
+    private boolean isNameLine(String line) {
+        return line != null && line.trim().startsWith("name:");
+    }
+
+
+    private Set<String> extractUniqueWords(List<String> lines) {
+        Set<String> uniqueWords = new HashSet<>();
+        for (String line : lines) {
+            String[] words = line.split("\\s+");
+            uniqueWords.addAll(Arrays.asList(words));
+        }
+        return uniqueWords;
+    }
+
+    private String findLineByWord(List<String> lines, String word) {
+        for (String line : lines) {
+            if (line.contains(word)) {
+                return line;
+            }
+        }
+        return "";
+    }
+
+
+    private String formatTableRow(String line1, String line2) {
+        StringBuilder rowBuilder = new StringBuilder("<tr>");
+
+        // Добавляем ячейки для строк обоих файлов
+        rowBuilder.append("<td>").append(line1).append("</td>");
+        rowBuilder.append("<td>").append(line2).append("</td>");
+
+        rowBuilder.append("</tr>");
+        return rowBuilder.toString();
+    }
 
     private String extractCpuValue(String line) {
         // Извлекаем значение CPU из строки, учитывая возможные единицы измерения
@@ -94,8 +180,6 @@ class YamlFileComparatorController {
         }
     }
 
-
-
     private String findCorrespondingLine(List<String> lines, String currentLine) {
         // Находим соответствующую строку в другом файле
         for (String line : lines) {
@@ -105,6 +189,4 @@ class YamlFileComparatorController {
         }
         return "";
     }
-
-
 }

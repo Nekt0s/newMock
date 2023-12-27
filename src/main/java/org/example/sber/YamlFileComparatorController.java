@@ -4,32 +4,39 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.util.*;
 
 @RestController
 class YamlFileComparatorController {
 
+    // Класс контроллера для сравнения YAML файлов
     public final YamlFileComparatorV2 fileComparator;
 
+    // Конструктор контроллера, инициализирующий объект сравнения
     public YamlFileComparatorController() {
         this.fileComparator = new YamlFileComparatorV2();
     }
 
+    // Обработчик POST-запроса для сравнения двух YAML файлов
     @PostMapping("/compareconfig")
     public String handleFileUpload(@RequestParam("file1") MultipartFile file1,
                                    @RequestParam("file2") MultipartFile file2) throws IOException {
+        // Чтение содержимого файлов в строки
         String file1Content = new String(file1.getBytes());
         String file2Content = new String(file2.getBytes());
 
+        // Извлечение строк с ключевыми словами из файлов
         List<String> file1Lines = fileComparator.extractLinesWithKeywords(file1Content, "agent-limits-mem", "agent-requests-mem", "agent-limits-cpu", "agent-requests-cpu", "limits", "cpu", "memory", "request");
         List<String> file2Lines = fileComparator.extractLinesWithKeywords(file2Content, "agent-limits-mem", "agent-requests-mem", "agent-limits-cpu", "agent-requests-cpu", "limits", "cpu", "memory", "request");
 
+        // Генерация HTML-ответа на основе сравнения строк
         return generateHtmlResponse(file1Lines, file2Lines);
     }
 
+    // Генерация HTML-страницы с результатами сравнения
     private String generateHtmlResponse(List<String> file1Lines, List<String> file2Lines) {
+        // Строитель HTML-кода
         StringBuilder htmlBuilder = new StringBuilder();
         htmlBuilder.append("<html><body style=\"background-color: #332f2c; color: white; display: flex;\">");
 
@@ -47,28 +54,30 @@ class YamlFileComparatorController {
         return htmlBuilder.toString();
     }
 
+    // Форматирование строк в виде HTML-таблицы
     private String formatAsTable(List<String> file1Lines, List<String> file2Lines) {
         Set<String> uniqueNames = new HashSet<>();
         Set<String> uniqueWords = new HashSet<>();
 
+        // Строитель таблицы
         StringBuilder tableBuilder = new StringBuilder();
         tableBuilder.append("<table border=\"1\" style=\"border-collapse: collapse;\">");
 
-        // Добавляем заголовок таблицы
+        // Добавление заголовка таблицы
         tableBuilder.append("<tr>");
-        tableBuilder.append("<th>Variable</th>");
-        tableBuilder.append("<th>Value 1</th>");
-        tableBuilder.append("<th>Value 2</th>");
+        tableBuilder.append("<th>Переменная</th>");
+        tableBuilder.append("<th>Значение 1</th>");
+        tableBuilder.append("<th>Значение 2</th>");
         tableBuilder.append("</tr>");
 
-        // Итерируем по строкам из обоих файлов
+        // Итерация по строкам из обоих файлов
         for (int i = 0; i < Math.max(file1Lines.size(), file2Lines.size()); i++) {
             String line1 = i < file1Lines.size() ? file1Lines.get(i) : "";
             String line2 = i < file2Lines.size() ? file2Lines.get(i) : "";
 
             // Если строки отличаются или содержат "name", добавляем в таблицу
             if (!Objects.equals(line1, line2) || line1.contains("name")) {
-                // Извлекаем переменную и значения из строк
+                // Извлечение переменной и значений из строк
                 String variable1 = extractVariable(line1);
                 String value1 = extractValue(line1);
 
@@ -83,6 +92,7 @@ class YamlFileComparatorController {
                     variable2 = formatUniqueWords(variable2, uniqueNames);
                 }
 
+                // Добавление строки в таблицу
                 tableBuilder.append("<tr>");
                 tableBuilder.append("<td>").append(variable1).append("</td>");
                 tableBuilder.append("<td>").append(value1).append("</td>");
@@ -95,8 +105,8 @@ class YamlFileComparatorController {
         return tableBuilder.toString();
     }
 
+    // Извлечение названия переменной из строки
     private String extractVariable(String line) {
-        // Извлекаем название переменной
         int colonIndex = line.indexOf(":");
         if (colonIndex != -1) {
             return line.substring(0, colonIndex).trim();
@@ -104,8 +114,8 @@ class YamlFileComparatorController {
         return "";
     }
 
+    // Извлечение значения переменной из строки
     private String extractValue(String line) {
-        // Извлекаем значение переменной
         int colonIndex = line.indexOf(":");
         if (colonIndex != -1) {
             return line.substring(colonIndex + 1).trim();
@@ -113,11 +123,11 @@ class YamlFileComparatorController {
         return "";
     }
 
-
+    // Форматирование уникальных слов в строке
     private String formatUniqueWords(String line, Set<String> uniqueWords) {
         StringBuilder formattedLine = new StringBuilder();
 
-        // Заменяем символы пробела на неразрывной пробел, удаляем пробелы в начале и конце строки
+        // Замена символов пробела на неразрывной пробел, удаление пробелов в начале и конце строки
         String[] words = line.trim().split("\\s+");
         for (String word : words) {
             if (uniqueWords.add(word)) {
@@ -129,64 +139,5 @@ class YamlFileComparatorController {
         }
 
         return formattedLine.toString().trim().replaceAll(" ", "&nbsp;");
-    }
-
-
-
-
-
-    private boolean isNameLine(String line) {
-        return line != null && line.trim().startsWith("name:");
-    }
-
-
-    private Set<String> extractUniqueWords(List<String> lines) {
-        Set<String> uniqueWords = new HashSet<>();
-        for (String line : lines) {
-            String[] words = line.split("\\s+");
-            uniqueWords.addAll(Arrays.asList(words));
-        }
-        return uniqueWords;
-    }
-
-    private String findLineByWord(List<String> lines, String word) {
-        for (String line : lines) {
-            if (line.contains(word)) {
-                return line;
-            }
-        }
-        return "";
-    }
-
-
-    private String formatTableRow(String line1, String line2) {
-        StringBuilder rowBuilder = new StringBuilder("<tr>");
-
-        // Добавляем ячейки для строк обоих файлов
-        rowBuilder.append("<td>").append(line1).append("</td>");
-        rowBuilder.append("<td>").append(line2).append("</td>");
-
-        rowBuilder.append("</tr>");
-        return rowBuilder.toString();
-    }
-
-    private String extractCpuValue(String line) {
-        // Извлекаем значение CPU из строки, учитывая возможные единицы измерения
-        String[] parts = line.split(":");
-        if (parts.length >= 2) {
-            return parts[1].trim().replaceAll("[^0-9]+", "");
-        } else {
-            return "";
-        }
-    }
-
-    private String findCorrespondingLine(List<String> lines, String currentLine) {
-        // Находим соответствующую строку в другом файле
-        for (String line : lines) {
-            if (line.startsWith(currentLine.substring(0, currentLine.indexOf(":")))) {
-                return line;
-            }
-        }
-        return "";
     }
 }

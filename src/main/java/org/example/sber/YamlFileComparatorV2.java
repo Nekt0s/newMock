@@ -8,6 +8,7 @@ import java.util.Set;
 
 public class YamlFileComparatorV2 {
 
+    // Точка входа для тестирования функциональности класса
     public static void main(String[] args) {
         String file1Path = "deployment-fssp-ms-adapter-ucp-data-search-deploymentNT.yaml";
         String file2Path = "deployment-fssp-ms-adapter-ucp-data-search-deploymentPROM.yaml";
@@ -18,18 +19,19 @@ public class YamlFileComparatorV2 {
             List<String> file2Lines = extractLinesWithKeywords(file2Path, "agent-limits-mem", "agent-requests-mem", "agent-limits-cpu", "agent-requests-cpu", "limits", "cpu", "memory", "request");
 
             // Вывод извлеченных строк с номерами сравнения
-            System.out.println("Lines with 'limits', 'request', 'cpu', and 'memory' in " + file1Path + ":");
+            System.out.println("Строки с 'limits', 'request', 'cpu' и 'memory' в файле " + file1Path + ":");
             printLinesWithNumbers(file1Lines);
 
-            System.out.println("\nLines with 'limits', 'request', 'cpu', and 'memory' in " + file2Path + ":");
+            System.out.println("\nСтроки с 'limits', 'request', 'cpu' и 'memory' в файле " + file2Path + ":");
             printLinesWithNumbers(file2Lines);
 
-            // Здесь можно добавить код для сравнения строк или другие действия
+            // Здесь можно добавить код для сравнения строк или других действий
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
+    // Извлечение строк с ключевыми словами из переданного содержимого файла
     public static List<String> extractLinesWithKeywords(String fileContent, String... keywords) throws IOException {
         List<String> allLines = List.of(fileContent.split("\n"));
         List<String> keywordLines = new ArrayList<>();
@@ -96,6 +98,7 @@ public class YamlFileComparatorV2 {
         return keywordLines;
     }
 
+    // Поиск строки с "name" перед ключевым словом
     private static String findNameBeforeKeyword(List<String> lines, int currentIndex) {
         // Ищем "name" перед ключевым словом в обычном порядке относительно текущей позиции
         for (int i = currentIndex + 1; i < lines.size(); i++) {
@@ -110,6 +113,7 @@ public class YamlFileComparatorV2 {
         return null; // Возвращаем null, если не найдено подходящее "name"
     }
 
+    // Поиск индекса ключевого слова в строке
     private static int findKeywordIndex(String line, String[] keywords) {
         for (String keyword : keywords) {
             int index = line.indexOf(keyword);
@@ -120,6 +124,7 @@ public class YamlFileComparatorV2 {
         return -1;
     }
 
+    // Вывод строк с номерами
     public static void printLinesWithNumbers(List<String> lines) {
         for (int i = 0; i < lines.size(); i++) {
             System.out.println("[" + (i + 1) + "] " + lines.get(i));

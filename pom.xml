@@ -90,6 +90,15 @@
             <artifactId>fileutils_2.12</artifactId>
             <version>1.2.5</version>
         </dependency>
+
+        <!-- https://mavenlibs.com/maven/dependency/io.fabric8/openshift-client -->
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>openshift-client</artifactId>
+            <version>6.8.1</version>
+        </dependency>
+
+
         <dependency>
             <groupId>io.github.pityka</groupId>
             <artifactId>fileutils_2.12</artifactId>

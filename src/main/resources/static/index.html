@@ -1,40 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Загрузите файлы для сравнения</title>
+    <!-- Подключение Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
         body {
             background-color: #332f2c;
             color: white;
+            padding: 300px;
+        }
+
+        h1 {
+            color: #ffc107;
+        }
+
+        form {
+            max-width: 600px;
+            margin: auto;
+        }
+
+        .file-input-group {
+            margin-bottom: 10px;
+        }
+
+        /* Добавлен стиль для скрытия метки (label) */
+        .file-input-group label {
+            display: none;
         }
     </style>
 </head>
+
 <body>
-<h1>Загрузите файлы для сравнения</h1>
-<form action="/compareconfig" method="post" enctype="multipart/form-data" id="fileForm">
-    <div id="fileInputs">
-        <label for="file1">Выберите файл:</label>
-        <input type="file" name="files" required>
-        <br>
+<h1 class="text-center">Загрузите файлы для сравнения</h1>
+<form action="/compareconfig" method="post" enctype="multipart/form-data">
+    <!-- Убрана дублирующаяся строка "Выберите файл" -->
+    <div class="file-input-group">
+        <input type="file" name="files" class="form-control" required>
     </div>
-    <button type="button" onclick="addFileInput()">Добавить файл</button>
-    <button type="submit">Сравнить файлы</button>
+    <div id="fileInputs" class="file-input-group">
+        <!-- Место для дополнительных файлов, добавляемых JavaScript -->
+    </div>
+    <button type="button" class="btn btn-secondary mt-3" onclick="addFileInput()">Добавить файл</button>
+    <button type="submit" class="btn btn-primary mt-3">Сравнить файлы</button>
+
+    <a href="/downloadopenshiftyaml" class="btn btn-info mt-3">Загрузить конфиги из OpenShift</a>
+
 </form>
 
-<script>
-    var fileCounter = 1;
+<!-- Добавление кнопки "Загрузить конфиги из OpenShift" -->
+<!--
+<a href="/downloadopenshiftyaml" class="btn btn-info mt-3">Загрузить конфиги из OpenShift</a>
+-->
 
-    function addFileInput() {
-        var fileInputs = document.getElementById('fileInputs');
-        var newInput = document.createElement('div');
-        newInput.innerHTML = '<label for="file' + (fileCounter + 1) + '">Выберите файл:</label>' +
-                             '<input type="file" name="files" required>' +
-                             '<br>';
-        fileInputs.appendChild(newInput);
-        fileCounter++;
-    }
-</script>
+<!-- Подключение Bootstrap JS и Popper.js (необходимо для Bootstrap JS) -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+<script>
+        var fileCounter = 1;
+
+        function addFileInput() {
+            var fileInputs = document.getElementById('fileInputs');
+            var newInput = document.createElement('div');
+            newInput.className = 'file-input-group';
+            newInput.innerHTML = '<label for="file' + (fileCounter + 1) + '" class="form-control">Выберите файл</label>' +
+                '<input type="file" name="files" class="form-control" required>' +
+                '<br>';
+            fileInputs.appendChild(newInput);
+            fileCounter++;
+        }
+    </script>
 </body>
+
 </html>

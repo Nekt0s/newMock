@@ -10,44 +10,60 @@ import java.util.*;
 @RestController
 class YamlFileComparatorController {
 
-    // Класс контроллера для сравнения YAML файлов
-    public final YamlFileComparatorV2 fileComparator;
+    private final YamlFileComparatorV2 fileComparator;
 
-    // Конструктор контроллера, инициализирующий объект сравнения
     public YamlFileComparatorController() {
         this.fileComparator = new YamlFileComparatorV2();
     }
 
-    // Обработчик POST-запроса для сравнения двух YAML файлов
     @PostMapping("/compareconfig")
-    public String handleFileUpload(@RequestParam("file1") MultipartFile file1,
-                                   @RequestParam("file2") MultipartFile file2) throws IOException {
-        // Чтение содержимого файлов в строки
-        String file1Content = new String(file1.getBytes());
-        String file2Content = new String(file2.getBytes());
+    public String handleFileUpload(@RequestParam("files") List<MultipartFile> files) throws IOException {
+        if (files == null || files.size() < 2) {
+            return "Должно быть загружено как минимум два файла для сравнения.";
+        }
 
-        // Извлечение строк с ключевыми словами из файлов
-        List<String> file1Lines = fileComparator.extractLinesWithKeywords(file1Content, "agent-limits-mem", "agent-requests-mem", "agent-limits-cpu", "agent-requests-cpu", "limits", "cpu", "memory", "request");
-        List<String> file2Lines = fileComparator.extractLinesWithKeywords(file2Content, "agent-limits-mem", "agent-requests-mem", "agent-limits-cpu", "agent-requests-cpu", "limits", "cpu", "memory", "request");
+        // Создание списка для хранения строк из всех файлов
+        List<List<String>> allFileLines = new ArrayList<>();
 
-        // Генерация HTML-ответа на основе сравнения строк
-        return generateHtmlResponse(file1Lines, file2Lines);
+        // Цикл по всем загруженным файлам
+        for (int i = 0; i < files.size(); i += 2) {
+            MultipartFile file1 = files.get(i);
+            MultipartFile file2 = files.get(i + 1);
+
+            // Чтение содержимого файлов
+            String file1Content = new String(file1.getBytes());
+            String file2Content = new String(file2.getBytes());
+
+            // Извлечение строк с ключевыми словами из файлов
+            List<String> file1Lines = fileComparator.extractLinesWithKeywords(file1Content, "agent-limits-mem", "agent-requests-mem", "agent-limits-cpu", "agent-requests-cpu", "limits", "cpu", "memory", "request");
+            List<String> file2Lines = fileComparator.extractLinesWithKeywords(file2Content, "agent-limits-mem", "agent-requests-mem", "agent-limits-cpu", "agent-requests-cpu", "limits", "cpu", "memory", "request");
+
+            // Добавление списка строк в общий список
+            allFileLines.add(file1Lines);
+            allFileLines.add(file2Lines);
+        }
+
+        // Ваш код для обработки всех файлов и создания HTML-ответа
+        return generateHtmlResponse(allFileLines);
     }
 
-    // Генерация HTML-страницы с результатами сравнения
-    private String generateHtmlResponse(List<String> file1Lines, List<String> file2Lines) {
-        // Строитель HTML-кода
+    private String generateHtmlResponse(List<List<String>> allFileLines) {
         StringBuilder htmlBuilder = new StringBuilder();
         htmlBuilder.append("<html><body style=\"background-color: #332f2c; color: white; display: flex;\">");
 
-        // Блок для обоих файлов
-        htmlBuilder.append("<div style=\"flex: 1; padding-right: 10px;\">");
-        htmlBuilder.append("<h1>").append("Сравнение конфигов: NT и PROM</h1>");
-        htmlBuilder.append("<pre>").append(formatAsTable(file1Lines, file2Lines)).append("</pre>");
-        htmlBuilder.append("<form action=\"/\" method=\"get\">");
-        htmlBuilder.append("<button type=\"submit\" style=\"background-color: black; color: white;\">Вернуться на главную страницу</button>");
-        htmlBuilder.append("</form>");
-        htmlBuilder.append("</div>");
+        // Добавление блоков для каждой пары файлов в HTML
+        for (int i = 0; i < allFileLines.size(); i += 2) {
+            List<String> file1Lines = allFileLines.get(i);
+            List<String> file2Lines = allFileLines.get(i + 1);
+
+            htmlBuilder.append("<div style=\"flex: 1; padding-right: 10px;\">");
+            htmlBuilder.append("<h1>").append("Сравнение конфигов: NT и PROM</h1>");
+            htmlBuilder.append("<pre>").append(formatAsTable(file1Lines, file2Lines)).append("</pre>");
+            htmlBuilder.append("<form action=\"/\" method=\"get\">");
+            htmlBuilder.append("<button type=\"submit\" style=\"background-color: black; color: white;\">Вернуться на главную страницу</button>");
+            htmlBuilder.append("</form>");
+            htmlBuilder.append("</div>");
+        }
 
         htmlBuilder.append("</body></html>");
 

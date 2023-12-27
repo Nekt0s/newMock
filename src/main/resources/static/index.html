@@ -3,35 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Загрузите файлы NT и PROM для сравнения</title>
+    <title>Загрузите файлы для сравнения</title>
     <style>
         body {
             background-color: #332f2c;
             color: white;
         }
     </style>
-    <!-- Добавляем кнопку для скачивания файлов из OpenShift -->
-    <a href="/openshift" target="_blank" rel="noopener noreferrer">
-        <button type="button">Скачать файлы из OpenShift</button>
-    </a>
 </head>
 <body>
-<h1>Загрузите файлы NT и PROM для сравнения</h1>
-<form action="/compareconfig" method="post" enctype="multipart/form-data">
-    <label for="file1">NT:</label>
-    <input type="file" name="file1" id="file1" required>
-    <br>
-    <label for="file2">PROM:</label>
-    <input type="file" name="file2" id="file2" required>
-    <br>
-<!--    <label for="file1">NT2:</label>
-    <input type="file" name="file3" id="file3" required>
-    <br><label for="file1">PROM2:</label>
-    <input type="file" name="file4" id="file4" required>
-    <br>-->
+<h1>Загрузите файлы для сравнения</h1>
+<form action="/compareconfig" method="post" enctype="multipart/form-data" id="fileForm">
+    <div id="fileInputs">
+        <label for="file1">Выберите файл:</label>
+        <input type="file" name="files" required>
+        <br>
+    </div>
+    <button type="button" onclick="addFileInput()">Добавить файл</button>
     <button type="submit">Сравнить файлы</button>
-    <br>
-
 </form>
+
+<script>
+    var fileCounter = 1;
+
+    function addFileInput() {
+        var fileInputs = document.getElementById('fileInputs');
+        var newInput = document.createElement('div');
+        newInput.innerHTML = '<label for="file' + (fileCounter + 1) + '">Выберите файл:</label>' +
+                             '<input type="file" name="files" required>' +
+                             '<br>';
+        fileInputs.appendChild(newInput);
+        fileCounter++;
+    }
+</script>
 </body>
 </html>

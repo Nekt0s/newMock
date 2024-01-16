@@ -1,10 +1,17 @@
 package org.example.sber;
 
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 @RestController
@@ -46,6 +53,8 @@ class YamlFileComparatorController {
         // Ваш код для обработки всех файлов и создания HTML-ответа
         return generateHtmlResponse(allFileLines);
     }
+
+
 
     private String generateHtmlResponse(List<List<String>> allFileLines) {
         StringBuilder htmlBuilder = new StringBuilder();
@@ -91,8 +100,8 @@ class YamlFileComparatorController {
             String line1 = i < file1Lines.size() ? file1Lines.get(i) : "";
             String line2 = i < file2Lines.size() ? file2Lines.get(i) : "";
 
-            // Если строки отличаются или содержат "name", добавляем в таблицу
-            if (!Objects.equals(line1, line2) || line1.contains("name")) {
+// Если строки отличаются или содержат "name" или "limits" или "requests", добавляем в таблицу
+            if (!Objects.equals(line1, line2) || line1.contains("name") || line1.contains("limits") || line1.contains("requests") || line2.contains("limits") || line2.contains("requests")) {
                 // Извлечение переменной и значений из строк
                 String variable1 = extractVariable(line1);
                 String value1 = extractValue(line1);
@@ -115,11 +124,22 @@ class YamlFileComparatorController {
                 tableBuilder.append("<td>").append(value2).append("</td>");
                 tableBuilder.append("</tr>");
             }
+
+        }
+
+        // Добавление пустых строк для уникальных переменных limits и requests
+        for (String uniqueWord : uniqueWords) {
+            tableBuilder.append("<tr>");
+            tableBuilder.append("<td>").append(uniqueWord).append("</td>");
+            tableBuilder.append("<td></td>");  // Пустая ячейка для значения 1
+            tableBuilder.append("<td></td>");  // Пустая ячейка для значения 2
+            tableBuilder.append("</tr>");
         }
 
         tableBuilder.append("</table>");
         return tableBuilder.toString();
     }
+
 
     // Извлечение названия переменной из строки
     private String extractVariable(String line) {
@@ -156,4 +176,94 @@ class YamlFileComparatorController {
 
         return formattedLine.toString().trim().replaceAll(" ", "&nbsp;");
     }
+
+
+
+    @GetMapping("/downloadopenshiftyaml")
+    public String showDownloadForm() {
+        return "<html lang=\"en\">" +
+                "<head>" +
+                "    <meta charset=\"UTF-8\">" +
+                "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" +
+                "    <title>Загрузить конфиги из OpenShift</title>" +
+                "    <link rel=\"stylesheet\" href=\"https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css\">" +
+                "    <style>" +
+                "        body {" +
+                "            background-color: #332f2c;" +
+                "            color: white;" +
+                "            padding: 300px;" +
+                "        }" +
+                "" +
+                "        h1 {" +
+                "            color: #ffc107;" +
+                "        }" +
+                "" +
+                "        form {" +
+                "            max-width: 600px;" +
+                "            margin: auto;" +
+                "        }" +
+                "" +
+                "        .form-group {" +
+                "            margin-bottom: 10px;" +
+                "        }" +
+                "    </style>" +
+                "</head>" +
+                "<body>" +
+                "<h1 class=\"text-center\">Загрузить конфиги из OpenShift</h1>" +
+                "<form action=\"/downloadopenshiftyaml\" method=\"get\">" +
+                "    <div class=\"form-group\">" +
+                "        <label for=\"openshiftUrl\">OpenShift URL:</label>" +
+                "        <input type=\"text\" id=\"openshiftUrl\" name=\"openshiftUrl\" class=\"form-control\" required>" +
+                "    </div>" +
+                "    <div class=\"form-group\">" +
+                "        <label for=\"sshToken\">SSH Token:</label>" +
+                "        <input type=\"text\" id=\"sshToken\" name=\"sshToken\" class=\"form-control\" required>" +
+                "    </div>" +
+                "    <div class=\"form-group\">" +
+                "        <label for=\"namespace\">Namespace:</label>" +
+                "        <input type=\"text\" id=\"namespace\" name=\"namespace\" class=\"form-control\" required>" +
+                "    </div>" +
+                "    <button type=\"submit\" class=\"btn btn-primary\">Скачать</button>" +
+                "</form>" +
+                "<form action=\"/\" method=\"get\">" +
+                "    <button type=\"submit\" class=\"btn btn-secondary mt-3\">Вернуться на главную страницу</button>" +
+                "</form>" +
+                "</body>" +
+                "</html>";
+    }
+
+
+
+
+    @PostMapping("/downloadopenshiftyaml")
+    public ResponseEntity<ByteArrayResource> downloadOpenShiftYaml(
+            @RequestParam String openshiftUrl,
+            @RequestParam String sshToken,
+            @RequestParam String namespace
+    ) {
+        // Оставляем остальную часть метода без изменений
+        String apiUrl = openshiftUrl + "/api/v1/namespaces/" + namespace + "/pods?limit=500";
+
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            ResponseEntity<String> responseEntity = restTemplate.getForEntity(apiUrl, String.class);
+
+            String yamlData = responseEntity.getBody();
+            byte[] yamlBytes = yamlData.getBytes(StandardCharsets.UTF_8);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDispositionFormData("attachment", "output.yaml");
+
+            return ResponseEntity
+                    .ok()
+                    .headers(headers)
+                    .body(new ByteArrayResource(yamlBytes));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500)
+                    .body(new ByteArrayResource(("Произошла ошибка: " + e.getMessage()).getBytes()));
+        }
+    }
+
 }

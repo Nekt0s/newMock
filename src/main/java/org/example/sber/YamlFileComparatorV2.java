@@ -58,36 +58,39 @@ public class YamlFileComparatorV2 {
 
             // Добавлено условие для исключения строк слишком большой длины
             if (containsKeyword && !isEmptyObject && line.length() <= 100) {
-                String nameBeforeKeyword = findNameBeforeKeyword(allLines, i);
-                if (nameBeforeKeyword != null && printedNames.add(nameBeforeKeyword)) {
-                    keywordLines.add(nameBeforeKeyword);
-                }
+                // Проверяем, есть ли "f:" перед "limits" или "requests"
+                if (!line.contains("f:")) {
+                    String nameBeforeKeyword = findNameBeforeKeyword(allLines, i);
+                    if (nameBeforeKeyword != null && printedNames.add(nameBeforeKeyword)) {
+                        keywordLines.add(nameBeforeKeyword);
+                    }
 
-                if (currentBlockName != null && printedLines.add(currentBlockName)) {
-                    keywordLines.add(currentBlockName);
-                    currentBlockName = null;
-                }
+                    if (currentBlockName != null && printedLines.add(currentBlockName)) {
+                        keywordLines.add(currentBlockName);
+                        currentBlockName = null;
+                    }
 
-                // Добавлено условие для обработки запятых в строках
-                if (line.contains(",")) {
-                    int keywordIndex = findKeywordIndex(line, keywords);
-                    int commaIndex = line.indexOf(",");
+                    // Добавлено условие для обработки запятых в строках
+                    if (line.contains(",")) {
+                        int keywordIndex = findKeywordIndex(line, keywords);
+                        int commaIndex = line.indexOf(",");
 
-                    if (keywordIndex != -1 && keywordIndex < commaIndex) {
-                        keywordLines.add(line.substring(keywordIndex, commaIndex));
+                        if (keywordIndex != -1 && keywordIndex < commaIndex) {
+                            keywordLines.add(line.substring(keywordIndex, commaIndex));
+                        } else {
+                            // Если не найдено ключевое слово или оно после запятой, добавляем всю строку
+                            keywordLines.add(line);
+                        }
                     } else {
-                        // Если не найдено ключевое слово или оно после запятой, добавляем всю строку
                         keywordLines.add(line);
                     }
-                } else {
-                    keywordLines.add(line);
-                }
 
-                isBlock = true;
+                    isBlock = true;
 
-                // Запоминаем имя блока, если это не "cpu" или "memory"
-                if (!line.contains("cpu") && !line.contains("memory")) {
-                    currentBlockName = line;
+                    // Запоминаем имя блока, если это не "cpu" или "memory"
+                    if (!line.contains("cpu") && !line.contains("memory") && !line.contains("limits") && !line.contains("requests")) {
+                        currentBlockName = line;
+                    }
                 }
             } else if (isBlock && line.isEmpty()) {
                 // Завершение блока при пустой строке
@@ -97,6 +100,8 @@ public class YamlFileComparatorV2 {
 
         return keywordLines;
     }
+
+
 
     // Поиск строки с "name" перед ключевым словом
     private static String findNameBeforeKeyword(List<String> lines, int currentIndex) {

@@ -1,26 +1,30 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Загрузите файлы для сравнения</title>
+    <title>Сравнение конфигураций</title>
     <!-- Подключение Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
         body {
-            background-color: #332f2c;
-            color: white;
-            padding: 300px;
+            background-color: #bbbbbb; /* Цвет фона - светло-серый или другой подходящий */
+            color: #343a40; /* Основной цвет текста - темно-серый или другой подходящий */
+            padding: 50px;
         }
 
         h1 {
-            color: #ffc107;
+            color: #007bff; /* Цвет заголовка - синий Bootstrap */
         }
 
         form {
             max-width: 600px;
             margin: auto;
+            background-color: #ffffff; /* Цвет формы - белый */
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Тень для выделения формы */
         }
 
         .file-input-group {
@@ -35,9 +39,8 @@
 </head>
 
 <body>
-<h1 class="text-center">Загрузите файлы для сравнения</h1>
+<h1 class="text-center">Сравнение конфигураций</h1>
 <form action="/compareconfig" method="post" enctype="multipart/form-data">
-    <!-- Убрана дублирующаяся строка "Выберите файл" -->
     <div class="file-input-group">
         <input type="file" name="files" class="form-control" required>
     </div>
@@ -45,16 +48,9 @@
         <!-- Место для дополнительных файлов, добавляемых JavaScript -->
     </div>
     <button type="button" class="btn btn-secondary mt-3" onclick="addFileInput()">Добавить файл</button>
-    <button type="submit" class="btn btn-primary mt-3">Сравнить файлы</button>
-
+    <button type="submit" class="btn btn-primary mt-3">Сравнить конфигурации</button>
     <a href="/downloadopenshiftyaml" class="btn btn-info mt-3">Загрузить конфиги из OpenShift</a>
-
 </form>
-
-<!-- Добавление кнопки "Загрузить конфиги из OpenShift" -->
-<!--
-<a href="/downloadopenshiftyaml" class="btn btn-info mt-3">Загрузить конфиги из OpenShift</a>
--->
 
 <!-- Подключение Bootstrap JS и Popper.js (необходимо для Bootstrap JS) -->
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>

@@ -9,29 +9,28 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
         body {
-            background-color: #bbbbbb; /* Цвет фона - светло-серый или другой подходящий */
-            color: #343a40; /* Основной цвет текста - темно-серый или другой подходящий */
+            background-color: #bbbbbb;
+            color: #343a40;
             padding: 50px;
         }
 
         h1 {
-            color: #007bff; /* Цвет заголовка - синий Bootstrap */
+            color: #007bff;
         }
 
         form {
             max-width: 600px;
             margin: auto;
-            background-color: #ffffff; /* Цвет формы - белый */
+            background-color: #ffffff;
             padding: 20px;
             border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Тень для выделения формы */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
 
         .file-input-group {
             margin-bottom: 10px;
         }
 
-        /* Добавлен стиль для скрытия метки (label) */
         .file-input-group label {
             display: none;
         }
@@ -42,12 +41,12 @@
 <h1 class="text-center">Сравнение конфигураций</h1>
 <form action="/compareconfig" method="post" enctype="multipart/form-data">
     <div class="file-input-group">
-        <input type="file" name="files" class="form-control" required>
+        <input type="file" name="files" class="form-control" required multiple>
     </div>
     <div id="fileInputs" class="file-input-group">
         <!-- Место для дополнительных файлов, добавляемых JavaScript -->
     </div>
-    <button type="button" class="btn btn-secondary mt-3" onclick="addFileInput()">Добавить файл</button>
+    <button type="button" class="btn btn-secondary mt-3" onclick="addFileInput()">Добавить файлы</button>
     <button type="submit" class="btn btn-primary mt-3">Сравнить конфигурации</button>
     <a href="/downloadopenshiftyaml" class="btn btn-info mt-3">Загрузить конфиги из OpenShift</a>
 </form>
@@ -58,17 +57,14 @@
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
 <script>
-        var fileCounter = 1;
-
         function addFileInput() {
             var fileInputs = document.getElementById('fileInputs');
             var newInput = document.createElement('div');
             newInput.className = 'file-input-group';
-            newInput.innerHTML = '<label for="file' + (fileCounter + 1) + '" class="form-control">Выберите файл</label>' +
-                '<input type="file" name="files" class="form-control" required>' +
+            newInput.innerHTML = '<label for="file' + (fileInputs.childElementCount + 1) + '" class="form-control">Выберите файл</label>' +
+                '<input type="file" name="files" class="form-control" required multiple>' +
                 '<br>';
             fileInputs.appendChild(newInput);
-            fileCounter++;
         }
     </script>
 </body>

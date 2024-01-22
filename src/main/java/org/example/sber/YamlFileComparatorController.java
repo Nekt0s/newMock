@@ -23,6 +23,50 @@ class YamlFileComparatorController {
         this.fileComparator = new YamlFileComparatorV2();
     }
 
+    private String generateHtmlResponse(List<List<String>> allFileLines, List<MultipartFile> files) {
+        StringBuilder htmlBuilder = new StringBuilder();
+        htmlBuilder.append("<html><body style=\"background-color: #bbbbbb; color: #343a40; padding: 50px;\">");
+
+        // Добавление блоков для каждой пары файлов в HTML
+        for (int i = 0; i < allFileLines.size(); i += 2) {
+            List<String> file1Lines = allFileLines.get(i);
+            List<String> file2Lines = allFileLines.get(i + 1);
+
+            MultipartFile file1 = files.get(i);
+            MultipartFile file2 = files.get(i + 1);
+
+            String fileName1 = file1.getOriginalFilename();
+            String fileName2 = file2.getOriginalFilename();
+
+            htmlBuilder.append("<div style=\"background-color: #ffffff; color: #000000; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); margin-bottom: 20px;\">");
+            htmlBuilder.append("<h1 style=\"color: #007bff; font-size: larger;\">").append("Сравнение: ").append(fileName1).append(" и ").append(fileName2).append("</h1>");
+            htmlBuilder.append("<pre>").append(formatAsTable(file1Lines, file2Lines)).append("</pre>");
+            htmlBuilder.append("<form action=\"/\" method=\"get\">");
+            htmlBuilder.append("<button type=\"submit\" style=\"background-color: black; color: white;\">Вернуться на главную страницу</button>");
+            htmlBuilder.append("</form>");
+            htmlBuilder.append("<button onclick=\"copyToClipboard('table").append(i / 2).append("')\" style=\"background-color: #007bff; color: white; margin-top: 10px;\">Копировать таблицу</button>");
+            htmlBuilder.append("<textarea id=\"table").append(i / 2).append("\" style=\"position: absolute; left: -9999px;\">").append(formatAsTable(file1Lines, file2Lines)).append("</textarea>");
+            htmlBuilder.append("</div>");
+        }
+
+        // Добавление скрипта для копирования в буфер обмена
+        htmlBuilder.append("<script>");
+        htmlBuilder.append("function copyToClipboard(elementId) {");
+        htmlBuilder.append("  var textarea = document.getElementById(elementId);");
+        htmlBuilder.append("  textarea.select();");
+        htmlBuilder.append("  document.execCommand('copy');");
+        htmlBuilder.append("}");
+        htmlBuilder.append("</script>");
+
+        htmlBuilder.append("</body></html>");
+
+        return htmlBuilder.toString();
+    }
+
+
+
+
+
     @PostMapping("/compareconfig")
     public String handleFileUpload(@RequestParam("files") List<MultipartFile> files) throws IOException {
         if (files == null || files.size() < 2) {
@@ -33,51 +77,22 @@ class YamlFileComparatorController {
         List<List<String>> allFileLines = new ArrayList<>();
 
         // Цикл по всем загруженным файлам
-        for (int i = 0; i < files.size(); i += 2) {
-            MultipartFile file1 = files.get(i);
-            MultipartFile file2 = files.get(i + 1);
+        for (int i = 0; i < files.size(); i++) {
+            MultipartFile currentFile = files.get(i);
+            String fileContent = new String(currentFile.getBytes());
+            List<String> currentFileLines = fileComparator.extractLinesWithKeywords(fileContent, "agent-limits-mem", "agent-requests-mem", "agent-limits-cpu", "agent-requests-cpu", "limits", "cpu", "memory", "request");
+            allFileLines.add(currentFileLines);
 
-            // Чтение содержимого файлов
-            String file1Content = new String(file1.getBytes());
-            String file2Content = new String(file2.getBytes());
 
-            // Извлечение строк с ключевыми словами из файлов
-            List<String> file1Lines = fileComparator.extractLinesWithKeywords(file1Content, "agent-limits-mem", "agent-requests-mem", "agent-limits-cpu", "agent-requests-cpu", "limits", "cpu", "memory", "request");
-            List<String> file2Lines = fileComparator.extractLinesWithKeywords(file2Content, "agent-limits-mem", "agent-requests-mem", "agent-limits-cpu", "agent-requests-cpu", "limits", "cpu", "memory", "request");
-
-            // Добавление списка строк в общий список
-            allFileLines.add(file1Lines);
-            allFileLines.add(file2Lines);
         }
 
         // Ваш код для обработки всех файлов и создания HTML-ответа
-        return generateHtmlResponse(allFileLines);
+        return generateHtmlResponse(allFileLines, files);
     }
 
 
 
-    private String generateHtmlResponse(List<List<String>> allFileLines) {
-        StringBuilder htmlBuilder = new StringBuilder();
-        htmlBuilder.append("<html><body style=\"background-color: #332f2c; color: white; display: flex;\">");
 
-        // Добавление блоков для каждой пары файлов в HTML
-        for (int i = 0; i < allFileLines.size(); i += 2) {
-            List<String> file1Lines = allFileLines.get(i);
-            List<String> file2Lines = allFileLines.get(i + 1);
-
-            htmlBuilder.append("<div style=\"flex: 1; padding-right: 10px;\">");
-            htmlBuilder.append("<h1>").append("Сравнение конфигов: NT и PROM</h1>");
-            htmlBuilder.append("<pre>").append(formatAsTable(file1Lines, file2Lines)).append("</pre>");
-            htmlBuilder.append("<form action=\"/\" method=\"get\">");
-            htmlBuilder.append("<button type=\"submit\" style=\"background-color: black; color: white;\">Вернуться на главную страницу</button>");
-            htmlBuilder.append("</form>");
-            htmlBuilder.append("</div>");
-        }
-
-        htmlBuilder.append("</body></html>");
-
-        return htmlBuilder.toString();
-    }
 
     // Форматирование строк в виде HTML-таблицы
     private String formatAsTable(List<String> file1Lines, List<String> file2Lines) {
@@ -86,22 +101,25 @@ class YamlFileComparatorController {
 
         // Строитель таблицы
         StringBuilder tableBuilder = new StringBuilder();
-        tableBuilder.append("<table border=\"1\" style=\"border-collapse: collapse;\">");
+        tableBuilder.append("<table border=\"1\" style=\"border-collapse: collapse; font-size: larger;\">");  // Увеличьте размер шрифта здесь
 
         // Добавление заголовка таблицы
         tableBuilder.append("<tr>");
         tableBuilder.append("<th>Переменная</th>");
-        tableBuilder.append("<th>Значение 1</th>");
-        tableBuilder.append("<th>Значение 2</th>");
+        tableBuilder.append("<th>").append("Значение ").append(file1Lines.get(0)).append("</th>");
+        tableBuilder.append("<th>").append("Значение ").append(file2Lines.get(0)).append("</th>");
         tableBuilder.append("</tr>");
 
         // Итерация по строкам из обоих файлов
-        for (int i = 0; i < Math.max(file1Lines.size(), file2Lines.size()); i++) {
+        for (int i = 1; i < Math.max(file1Lines.size(), file2Lines.size()); i++) {
             String line1 = i < file1Lines.size() ? file1Lines.get(i) : "";
             String line2 = i < file2Lines.size() ? file2Lines.get(i) : "";
 
-// Если строки отличаются или содержат "name" или "limits" или "requests", добавляем в таблицу
+            // Если строки отличаются или содержат "name", добавляем в таблицу
             if (!Objects.equals(line1, line2) || line1.contains("name") || line1.contains("limits") || line1.contains("requests") || line2.contains("limits") || line2.contains("requests")) {
+
+            }
+            {
                 // Извлечение переменной и значений из строк
                 String variable1 = extractVariable(line1);
                 String value1 = extractValue(line1);
@@ -124,21 +142,12 @@ class YamlFileComparatorController {
                 tableBuilder.append("<td>").append(value2).append("</td>");
                 tableBuilder.append("</tr>");
             }
-
-        }
-
-        // Добавление пустых строк для уникальных переменных limits и requests
-        for (String uniqueWord : uniqueWords) {
-            tableBuilder.append("<tr>");
-            tableBuilder.append("<td>").append(uniqueWord).append("</td>");
-            tableBuilder.append("<td></td>");  // Пустая ячейка для значения 1
-            tableBuilder.append("<td></td>");  // Пустая ячейка для значения 2
-            tableBuilder.append("</tr>");
         }
 
         tableBuilder.append("</table>");
         return tableBuilder.toString();
     }
+
 
 
     // Извлечение названия переменной из строки

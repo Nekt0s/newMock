@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 public class SecretSantaGame {
 
@@ -19,9 +18,11 @@ public class SecretSantaGame {
         names.add("Ирина");
         names.add("Рамиль");
         names.add("Никита");
+        names.add("Катя");
 
         Map<String, String> secretSantaMap = generateSecretSantaMap(names);
 
+        // Выводим пары
         for (String giver : secretSantaMap.keySet()) {
             String receiver = secretSantaMap.get(giver);
             System.out.println(giver + " --> " + receiver);
@@ -30,28 +31,43 @@ public class SecretSantaGame {
 
     private static Map<String, String> generateSecretSantaMap(List<String> names) {
         List<String> shuffledNames = new ArrayList<>(names);
-        Collections.shuffle(shuffledNames);
+        Map<String, String> secretSantaMap;
 
-        Map<String, String> secretSantaMap = new HashMap<>();
-        for (int i = 0; i < shuffledNames.size(); i++) {
-            String giver = shuffledNames.get(i);
-            String receiver = shuffledNames.get((i + 1) % shuffledNames.size());
+        // Цикл для перетасовки до тех пор, пока не будут исключены нежелательные пары
+        while (true) {
+            Collections.shuffle(shuffledNames);
+            secretSantaMap = new HashMap<>();
 
-            if ((giver.equals("Леша") && receiver.equals("Даша")) ||
-                    (giver.equals("Настя") && receiver.equals("Ильнар"))) {
+            boolean isValid = true;
 
-                Collections.shuffle(shuffledNames);
-                i = -1; //
-                continue;
+            for (int i = 0; i < shuffledNames.size(); i++) {
+                String giver = shuffledNames.get(i);
+                String receiver = shuffledNames.get((i + 1) % shuffledNames.size());
+
+                // Проверяем нежелательные пары в обоих направлениях
+                if ((giver.equals("Леша") && receiver.equals("Даша")) ||
+                        (giver.equals("Даша") && receiver.equals("Леша")) ||
+                        (giver.equals("Настя") && receiver.equals("Ильнар")) ||
+                        (giver.equals("Ильнар") && receiver.equals("Настя")) ||
+                        (giver.equals("Никита") && receiver.equals("Катя")) ||
+                        (giver.equals("Катя") && receiver.equals("Никита"))) {
+                    isValid = false; // Если найдена нежелательная пара, повторяем цикл
+                    break;
+                }
+
+                // Проверяем, что участник не дарит сам себе
+                if (giver.equals(receiver)) {
+                    isValid = false;
+                    break;
+                }
+
+                secretSantaMap.put(giver, receiver);
             }
 
-            if (giver.equals(receiver)) {
-                Collections.shuffle(shuffledNames);
-                i = -1;
-                continue;
+            // Если все проверки прошли успешно, выходим из цикла
+            if (isValid) {
+                break;
             }
-
-            secretSantaMap.put(giver, receiver);
         }
 
         return secretSantaMap;

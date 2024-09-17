@@ -16,6 +16,9 @@
 
         h1 {
             color: #007bff;
+            border: 2px solid #007bff;
+            padding: 2px;
+            border-radius: 10px;
         }
 
         form {
@@ -29,11 +32,31 @@
 
         .file-input-group {
             margin-bottom: 10px;
+            position: relative;
         }
 
         .file-input-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .file-input-group input[type="file"] {
             display: none;
         }
+1
+        .remove-file-btn {
+            position: absolute;
+            top: 0;
+            right: 0;
+            margin-top: 0;
+            cursor: pointer;
+        }
+
+        .btn-group {
+            margin-top: 10px;
+        }
+            .highlight {
+        background-color: red;
     </style>
 </head>
 
@@ -41,14 +64,18 @@
 <h1 class="text-center">Сравнение конфигураций</h1>
 <form action="/compareconfig" method="post" enctype="multipart/form-data">
     <div class="file-input-group">
-        <input type="file" name="files" class="form-control" required multiple>
+        <label for="file1" class="form-control">Выберите файл</label>
+        <input type="file" id="file1" name="files" class="form-control" required multiple onchange="updateInputLabel(this)">
+        <button type="button" class="btn btn-danger remove-file-btn" onclick="removeFileInput(this)">Удалить</button>
     </div>
     <div id="fileInputs" class="file-input-group">
         <!-- Место для дополнительных файлов, добавляемых JavaScript -->
     </div>
-    <button type="button" class="btn btn-secondary mt-3" onclick="addFileInput()">Добавить файлы</button>
-    <button type="submit" class="btn btn-primary mt-3">Сравнить конфигурации</button>
-    <a href="/downloadopenshiftyaml" class="btn btn-info mt-3">Загрузить конфиги из OpenShift</a>
+    <div class="btn-group">
+        <button type="button" class="btn btn-secondary" onclick="addFileInput()">Добавить файлы</button>
+        <button type="submit" class="btn btn-primary">Сравнить конфигурации</button>
+        <a href="/downloadopenshiftyaml" class="btn btn-info">Загрузить конфиги из OpenShift</a>
+    </div>
 </form>
 
 <!-- Подключение Bootstrap JS и Popper.js (необходимо для Bootstrap JS) -->
@@ -62,9 +89,28 @@
             var newInput = document.createElement('div');
             newInput.className = 'file-input-group';
             newInput.innerHTML = '<label for="file' + (fileInputs.childElementCount + 1) + '" class="form-control">Выберите файл</label>' +
-                '<input type="file" name="files" class="form-control" required multiple>' +
+                '<input type="file" id="file' + (fileInputs.childElementCount + 1) + '" name="files" class="form-control" required multiple onchange="updateInputLabel(this)">' +
+                '<button type="button" class="btn btn-danger remove-file-btn" onclick="removeFileInput(this)">Удалить</button>' +
                 '<br>';
             fileInputs.appendChild(newInput);
+            // Добавлено: чтобы вновь созданный input[type="file"] становился активным
+            var fileInput = newInput.querySelector('input[type="file"]');
+            fileInput.click();
+        }
+
+        function removeFileInput(button) {
+            var fileInput = button.parentElement;
+            fileInput.remove();
+        }
+
+        function updateInputLabel(input) {
+            var label = input.previousElementSibling;
+            if (input.files.length > 0) {
+                var fileNames = Array.from(input.files).map(file => file.name.substring(0, 7)).join(', ');
+                label.innerHTML = 'Выбранные файлы: ' + fileNames;
+            } else {
+                label.innerHTML = 'Выберите файл';
+            }
         }
     </script>
 </body>

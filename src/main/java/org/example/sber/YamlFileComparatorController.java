@@ -1,18 +1,29 @@
 package org.example.sber;
 
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import io.fabric8.kubernetes.client.*;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodList;
+import io.fabric8.openshift.client.DefaultOpenShiftClient;
+import io.fabric8.openshift.client.OpenShiftClient;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+
+import java.io.ByteArrayOutputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+//import static mail.OutlookEmailSender.sendEmail;
+
 
 @RestController
 class YamlFileComparatorController {
@@ -22,7 +33,45 @@ class YamlFileComparatorController {
     public YamlFileComparatorController() {
         this.fileComparator = new YamlFileComparatorV2();
     }
-
+    private String generateHtmlResponseForEmail(List<List<String>> allFileLines, List<String> fileNames) {
+        StringBuilder htmlBuilder = new StringBuilder();
+        htmlBuilder.append("<html><body style=\"background-color: #bbbbbb; color: #343a40; padding: 50px;\">");
+        // Добавление блоков для каждой пары файлов в HTML с названиями файлов
+        for (int i = 0; i < allFileLines.size(); i += 2) {
+            List<String> file1Lines = allFileLines.get(i);
+            List<String> file2Lines = allFileLines.get(i + 1);
+            String fileName1 = fileNames.get(i); // Получаем название первого файла
+            String fileName2 = fileNames.get(i + 1); // Получаем название второго файла
+            htmlBuilder.append("<div style=\"background-color: #ffffff; color: #000000; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); margin-bottom: 20px;\">");
+            htmlBuilder.append("<h1 style=\"color: #007bff; font-size: larger;\">").append("Сравнение: ").append(fileName1).append(" и ").append(fileName2).append("</h1>");
+            htmlBuilder.append("<table border=\"1\" style=\"border-collapse: collapse; font-size: larger;\">");
+            htmlBuilder.append("<tr>");
+            htmlBuilder.append("<th>Переменная</th>");
+            htmlBuilder.append("<th>").append("").append(fileName1).append("</th>"); // Изменено: добавлено название первого файла
+            htmlBuilder.append("<th>").append("").append(fileName2).append("</th>"); // Изменено: добавлено название второго файла
+            htmlBuilder.append("</tr>");
+            for (int j = 0; j < Math.max(file1Lines.size(), file2Lines.size()); j++) {
+                String line1 = j < file1Lines.size() ? file1Lines.get(j) : "";
+                String line2 = j < file2Lines.size() ? file2Lines.get(j) : "";
+                String variable1 = extractVariable(line1);
+                String value1 = extractValue(line1);
+                String variable2 = extractVariable(line2);
+                String value2 = extractValue(line2);
+                // Добавляем новую переменную для хранения отформатированного значения
+                String formattedVariable1 = variable1.equals("name") ? "name" : formatVariable(variable1);
+                String formattedVariable2 = variable2.equals("name") ? "name" : formatVariable(variable2);
+                htmlBuilder.append("<tr>");
+                htmlBuilder.append("<td>").append(formattedVariable1).append("</td>");
+                htmlBuilder.append("<td>").append(value1).append("</td>");
+                htmlBuilder.append("<td>").append(value2).append("</td>");
+                htmlBuilder.append("</tr>");
+            }
+            htmlBuilder.append("</table>");
+            htmlBuilder.append("</div>");
+        }
+        htmlBuilder.append("</body></html>");
+        return htmlBuilder.toString();
+    }
     private String generateHtmlResponse(List<List<String>> allFileLines, List<MultipartFile> files) {
         StringBuilder htmlBuilder = new StringBuilder();
         htmlBuilder.append("<html><body style=\"background-color: #bbbbbb; color: #343a40; padding: 50px;\">");
@@ -40,7 +89,35 @@ class YamlFileComparatorController {
 
             htmlBuilder.append("<div style=\"background-color: #ffffff; color: #000000; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); margin-bottom: 20px;\">");
             htmlBuilder.append("<h1 style=\"color: #007bff; font-size: larger;\">").append("Сравнение: ").append(fileName1).append(" и ").append(fileName2).append("</h1>");
-            htmlBuilder.append("<pre>").append(formatAsTable(file1Lines, file2Lines)).append("</pre>");
+            htmlBuilder.append("<table border=\"1\" style=\"border-collapse: collapse; font-size: larger;\">");
+            htmlBuilder.append("<tr>");
+            htmlBuilder.append("<th>Переменная</th>");
+            htmlBuilder.append("<th>Файл NT</th>");
+            htmlBuilder.append("<th>Файл PROM</th>");
+            htmlBuilder.append("</tr>");
+
+            for (int j = 0; j < Math.max(file1Lines.size(), file2Lines.size()); j++) {
+                String line1 = j < file1Lines.size() ? file1Lines.get(j) : "";
+                String line2 = j < file2Lines.size() ? file2Lines.get(j) : "";
+
+                String variable1 = extractVariable(line1);
+                String value1 = extractValue(line1);
+
+                String variable2 = extractVariable(line2);
+                String value2 = extractValue(line2);
+
+                // Добавляем новую переменную для хранения отформатированного значения
+                String formattedVariable1 = variable1.equals("name") ? "name" : formatVariable(variable1);
+                String formattedVariable2 = variable2.equals("name") ? "name" : formatVariable(variable2);
+
+                htmlBuilder.append("<tr>");
+                htmlBuilder.append("<td>").append(formattedVariable1).append("</td>");
+                htmlBuilder.append("<td>").append(value1).append("</td>");
+                htmlBuilder.append("<td>").append(value2).append("</td>");
+                htmlBuilder.append("</tr>");
+            }
+
+            htmlBuilder.append("</table>");
             htmlBuilder.append("<form action=\"/\" method=\"get\">");
             htmlBuilder.append("<button type=\"submit\" style=\"background-color: black; color: white;\">Вернуться на главную страницу</button>");
             htmlBuilder.append("</form>");
@@ -63,6 +140,12 @@ class YamlFileComparatorController {
         return htmlBuilder.toString();
     }
 
+    // Добавим новый метод для форматирования переменной
+    private String formatVariable(String variable) {
+        return variable.replace("-", "");
+    }
+
+
 
 
 
@@ -82,11 +165,25 @@ class YamlFileComparatorController {
             String fileContent = new String(currentFile.getBytes());
             List<String> currentFileLines = fileComparator.extractLinesWithKeywords(fileContent, "agent-limits-mem", "agent-requests-mem", "agent-limits-cpu", "agent-requests-cpu", "limits", "cpu", "memory", "request");
             allFileLines.add(currentFileLines);
-
+        }
+        List<String> fileNames = new ArrayList<>();
+        for (MultipartFile file : files) {
+            fileNames.add(file.getOriginalFilename());
 
         }
-
-        // Ваш код для обработки всех файлов и создания HTML-ответа
+        String htmlResponse = generateHtmlResponseForEmail(allFileLines, fileNames);
+        // Отправка результатов сравнения на почту
+//        try {
+//            String [] recipients = {"NAlTokarev@sberbank.ru",  }; //,  "VYuStakhov@sberbank.ru", "OOPrudnikov@sberbank.ru", "Krasheninnikov.I.A@sberbank.ru", "ANiPoddubny@omega.sbrf.ru", "Markin.Se.Ol@omega.sbrf.ru" ,"AMRakhmatullin@omega.sbrf.ru", "Kravchenko.A.Vladimirovi@sberbank.ru", "Sadovskiy.A.Va@sberbank.ru","
+//            String subject = "Результат сравнения конфигураций - "  ;
+//            sendEmail("smtpas.sigma.sbrf.ru", "465", subject, htmlResponse, recipients);
+//            System.out.println("Email успешно отправлен");
+//            // Добавляем отправку на Confluence
+//            String pageTitle = "Результат сравнения конфигураций";
+//            ConfluenceSender.updateConfluencePage(htmlResponse, pageTitle);
+//        } catch (Exception e) {
+//            System.out.println("Ошибка отправки email: " + e.getMessage());
+//        }
         return generateHtmlResponse(allFileLines, files);
     }
 
@@ -219,7 +316,7 @@ class YamlFileComparatorController {
                 "</head>" +
                 "<body>" +
                 "<h1 class=\"text-center\">Загрузить конфиги из OpenShift</h1>" +
-                "<form action=\"/downloadopenshiftyaml\" method=\"get\">" +
+                "<form action=\"/downloadpodsyaml\" method=\"post\">" +
                 "    <div class=\"form-group\">" +
                 "        <label for=\"openshiftUrl\">OpenShift URL:</label>" +
                 "        <input type=\"text\" id=\"openshiftUrl\" name=\"openshiftUrl\" class=\"form-control\" required>" +
@@ -234,45 +331,68 @@ class YamlFileComparatorController {
                 "    </div>" +
                 "    <button type=\"submit\" class=\"btn btn-primary\">Скачать</button>" +
                 "</form>" +
-                "<form action=\"/\" method=\"get\">" +
+                "<form action=\"/\" method=\"post\">" +
                 "    <button type=\"submit\" class=\"btn btn-secondary mt-3\">Вернуться на главную страницу</button>" +
                 "</form>" +
                 "</body>" +
                 "</html>";
     }
+    @RestController
+    public class DownloadController {
 
+        @PostMapping("/downloadpodsyaml")
 
+        public ResponseEntity<byte[]> downloadPodsYaml(
 
+                @RequestParam String openshiftUrl,
+                @RequestParam String sshToken,
+                @RequestParam String namespace
 
-    @PostMapping("/downloadopenshiftyaml")
-    public ResponseEntity<ByteArrayResource> downloadOpenShiftYaml(
-            @RequestParam String openshiftUrl,
-            @RequestParam String sshToken,
-            @RequestParam String namespace
-    ) {
-        // Оставляем остальную часть метода без изменений
-        String apiUrl = openshiftUrl + "/api/v1/namespaces/" + namespace + "/pods?limit=500";
+        ) {
+            try {
+                Config config = new ConfigBuilder()
+                        .withMasterUrl(openshiftUrl)
+                        .withOauthToken(sshToken)
+                        .withNamespace(namespace)
+                        .withRequestTimeout(10000)
+                        .withConnectionTimeout(10000)
+                        .withTrustCerts(true)
+                        .build();
 
-        try {
-            RestTemplate restTemplate = new RestTemplate();
-            ResponseEntity<String> responseEntity = restTemplate.getForEntity(apiUrl, String.class);
+                OpenShiftClient kubernetesClient = new DefaultOpenShiftClient(config);
 
-            String yamlData = responseEntity.getBody();
-            byte[] yamlBytes = yamlData.getBytes(StandardCharsets.UTF_8);
+                ByteArrayOutputStream zipStream = new ByteArrayOutputStream();
+                try (ZipOutputStream zipOutputStream = new ZipOutputStream(zipStream)) {
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-            headers.setContentDispositionFormData("attachment", "output.yaml");
+// Получение списка Pod в указанном namespace
+                    PodList podList = kubernetesClient.pods().inNamespace(namespace).list();
 
-            return ResponseEntity
-                    .ok()
-                    .headers(headers)
-                    .body(new ByteArrayResource(yamlBytes));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(500)
-                    .body(new ByteArrayResource(("Произошла ошибка: " + e.getMessage()).getBytes()));
+// Загрузка YAML-файлов для каждого Pod
+                    for (Pod pod : podList.getItems()) {
+                        String podName = pod.getMetadata().getName();
+                        String yamlContent = kubernetesClient.pods().inNamespace(namespace).withName(podName).getLog();
+
+// Добавление YAML-файла в zip-архив
+                        zipOutputStream.putNextEntry(new ZipEntry(podName + ".yaml"));
+                        zipOutputStream.write(yamlContent.getBytes(StandardCharsets.UTF_8));
+                        zipOutputStream.closeEntry();
+                    }
+                }
+
+                HttpHeaders headers = new HttpHeaders();
+                headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=openshift-yaml.zip");
+
+                return ResponseEntity.ok()
+                        .headers(headers)
+                        .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                        .body(zipStream.toByteArray());
+
+            } catch (Exception e) {
+// Обработка ошибок
+                e.printStackTrace();
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            }
         }
-    }
 
+    }
 }

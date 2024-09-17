@@ -9,7 +9,5 @@ public class YamlFileComparatorApplication {
     public static void main(String[] args) {
         SpringApplication.run(YamlFileComparatorApplication.class, args);
 
-
-
     }
 }

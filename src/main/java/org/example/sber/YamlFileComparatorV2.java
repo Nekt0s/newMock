@@ -1,138 +1,119 @@
 package org.example.sber;
 
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.Constructor;
+
+import java.util.*;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 public class YamlFileComparatorV2 {
 
-    // Точка входа для тестирования функциональности класса
-    public static void main(String[] args) {
-        String file1Path = "deployment-fssp-ms-adapter-ucp-data-search-deploymentNT.yaml";
-        String file2Path = "deployment-fssp-ms-adapter-ucp-data-search-deploymentPROM.yaml";
+    public List<String> extractLinesWithKeywords(String fileContent, String... keywords) {
+        Yaml yaml = new Yaml(new Constructor(Map.class));
+        Map<String, Object> yamlObject = yaml.load(fileContent);
 
-        try {
-            // Извлечение строк с ключевыми словами из обоих файлов
-            List<String> file1Lines = extractLinesWithKeywords(file1Path, "agent-limits-mem", "agent-requests-mem", "agent-limits-cpu", "agent-requests-cpu", "limits", "cpu", "memory", "request");
-            List<String> file2Lines = extractLinesWithKeywords(file2Path, "agent-limits-mem", "agent-requests-mem", "agent-limits-cpu", "agent-requests-cpu", "limits", "cpu", "memory", "request");
+        List<String> linesWithKeywords = new ArrayList<>();
+        Set<String> uniqueContainerNames = new HashSet<>();
+        traverseYamlObject(yamlObject, yamlObject, "", linesWithKeywords, keywords, null, uniqueContainerNames);
 
-            // Вывод извлеченных строк с номерами сравнения
-            System.out.println("Строки с 'limits', 'request', 'cpu' и 'memory' в файле " + file1Path + ":");
-            printLinesWithNumbers(file1Lines);
-
-            System.out.println("\nСтроки с 'limits', 'request', 'cpu' и 'memory' в файле " + file2Path + ":");
-            printLinesWithNumbers(file2Lines);
-
-            // Здесь можно добавить код для сравнения строк или других действий
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        return linesWithKeywords;
     }
 
-    // Извлечение строк с ключевыми словами из переданного содержимого файла
-    public static List<String> extractLinesWithKeywords(String fileContent, String... keywords) throws IOException {
-        List<String> allLines = List.of(fileContent.split("\n"));
-        List<String> keywordLines = new ArrayList<>();
-        Set<String> printedNames = new HashSet<>();
-        Set<String> printedLines = new HashSet<>();
+    private void traverseYamlObject(Map<String, Object> yamlObject1, Map<String, Object> yamlObject2, String currentPath, List<String> linesWithKeywords, String[] keywords, String containerName, Set<String> uniqueContainerNames) {
+        if (currentPath.equals("metadata.annotations") || currentPath.contains(".env") ) {
+            return;
+        }
 
-        boolean isBlock = false;
-        String currentBlockName = null;
+        for (Map.Entry<String, Object> entry : yamlObject1.entrySet()) {
+            String key = entry.getKey();
+            Object value1 = entry.getValue();
+            Object value2 = yamlObject2.get(key);
+            String currentFullPath = currentPath.isEmpty() ? key : currentPath + "." + key;
 
-        for (int i = 0; i < allLines.size(); i++) {
-            String line = allLines.get(i);
-
-            // Проверка наличия любого из ключевых слов
-            boolean containsKeyword = false;
-            for (String keyword : keywords) {
-                if (line.contains(keyword)) {
-                    containsKeyword = true;
-                    break;
+            if (value1 instanceof Map) {
+                if (key.equals("containers")) {
+                    traverseYamlObject((Map<String, Object>) value1, (Map<String, Object>) value2, currentFullPath, linesWithKeywords, keywords, null, uniqueContainerNames);
+                } else {
+                    traverseYamlObject((Map<String, Object>) value1, (Map<String, Object>) value2, currentFullPath, linesWithKeywords, keywords, containerName, uniqueContainerNames);
                 }
-            }
-
-            // Проверка строки на пустые объекты
-            boolean isEmptyObject = line.trim().matches(".*: \\{\\}");
-
-            // Добавлено условие для исключения строк слишком большой длины
-            if (containsKeyword && !isEmptyObject && line.length() <= 100) {
-                // Проверяем, есть ли "f:" перед "limits" или "requests"
-                if (!line.contains("f:")) {
-                    String nameBeforeKeyword = findNameBeforeKeyword(allLines, i);
-                    if (nameBeforeKeyword != null && printedNames.add(nameBeforeKeyword)) {
-                        keywordLines.add(nameBeforeKeyword);
+            } else if (value1 instanceof List) {
+                traverseYamlList((List<Object>) value1, (List<Object>) value2, currentFullPath, linesWithKeywords, keywords, containerName, uniqueContainerNames);
+            } else if (value1 != null) {
+                if (containsKeyword(currentFullPath, keywords)) {
+                    if (containerName != null && !uniqueContainerNames.contains(containerName)) {
+                        linesWithKeywords.add("name" + ": " + containerName);
+                        uniqueContainerNames.add(containerName);
                     }
-
-                    if (currentBlockName != null && printedLines.add(currentBlockName)) {
-                        keywordLines.add(currentBlockName);
-                        currentBlockName = null;
-                    }
-
-                    // Добавлено условие для обработки запятых в строках
-                    if (line.contains(",")) {
-                        int keywordIndex = findKeywordIndex(line, keywords);
-                        int commaIndex = line.indexOf(",");
-
-                        if (keywordIndex != -1 && keywordIndex < commaIndex) {
-                            keywordLines.add(line.substring(keywordIndex, commaIndex));
-                        } else {
-                            // Если не найдено ключевое слово или оно после запятой, добавляем всю строку
-                            keywordLines.add(line);
-                        }
+                }
+                String[] parts = currentFullPath.split("\\.");
+                String variable = parts.length >= 2 ? parts[parts.length - 2] + "." + parts[parts.length - 1] : currentFullPath; // возвращает последние 2 слова (limits.. requests..)
+                //  String variable = currentFullPath;  // если нужно вывести полный путь в ямл файле
+                String line1 = variable + ": " + value1.toString();
+                String line2 = variable + ": " + value2.toString();
+                if (containsKeyword(line1, keywords)) {
+                    if (!line1.equals(line2)) {
+                        linesWithKeywords.add("<span style=\"color:red\">" + line1 + "</span>");
                     } else {
-                        keywordLines.add(line);
-                    }
-
-                    isBlock = true;
-
-                    // Запоминаем имя блока, если это не "cpu" или "memory"
-                    if (!line.contains("cpu") && !line.contains("memory") && !line.contains("limits") && !line.contains("requests")) {
-                        currentBlockName = line;
+                        linesWithKeywords.add(line1);
                     }
                 }
-            } else if (isBlock && line.isEmpty()) {
-                // Завершение блока при пустой строке
-                isBlock = false;
             }
         }
-
-        return keywordLines;
     }
 
+    private void traverseYamlList(List<Object> yamlList1, List<Object> yamlList2, String currentPath, List<String> linesWithKeywords, String[] keywords, String containerName, Set<String> uniqueContainerNames) {
+        for (int i = 0; i < yamlList1.size(); i++) {
+            Object item1 = yamlList1.get(i);
+            Object item2 = yamlList2.get(i);
+            String listItemPath = currentPath + "[" + i + "]";
 
-
-    // Поиск строки с "name" перед ключевым словом
-    private static String findNameBeforeKeyword(List<String> lines, int currentIndex) {
-        // Ищем "name" перед ключевым словом в обычном порядке относительно текущей позиции
-        for (int i = currentIndex + 1; i < lines.size(); i++) {
-            String line = lines.get(i);
-
-            // Изменим условие для более точной проверки наличия ключевого слова "name"
-            if (line.contains("name:") && !line.trim().endsWith(":")) {
-                // Возвращаем строку с "name"
-                return line;
+            if (item1 instanceof Map) {
+                if (currentPath.endsWith("containers")) {
+                    String name = (String) ((Map<String, Object>) item1).get("name");
+                    traverseYamlObject((Map<String, Object>) item1, (Map<String, Object>) item2, listItemPath, linesWithKeywords, keywords, name, uniqueContainerNames);
+                } else {
+                    traverseYamlObject((Map<String, Object>) item1, (Map<String, Object>) item2, listItemPath, linesWithKeywords, keywords, containerName, uniqueContainerNames);
+                }
+            } else if (item1 instanceof List) {
+                traverseYamlList((List<Object>) item1, (List<Object>) item2, listItemPath, linesWithKeywords, keywords, containerName, uniqueContainerNames);
+            } else if (item1 != null) {
+                if (containsKeyword(listItemPath, keywords)) {
+                    if (containerName != null && !uniqueContainerNames.contains(containerName)) {
+                        linesWithKeywords.add("name" + ": " + containerName);
+                        uniqueContainerNames.add(containerName);
+                    }
+                }
+                String[] parts = listItemPath.split("\\.");
+                String variable = parts.length >= 2 ? parts[parts.length - 2] + "." + parts[parts.length - 1] : listItemPath;
+                String line1 = variable + ": " +
+                        item1.toString();
+                String line2 = variable + ": " + item2.toString();
+                if (containsKeyword(line1, keywords)) {
+                    if (!line1.equals(line2)) {
+                        linesWithKeywords.add("<span style=\"color:red\">" + line1 + "</span>");
+                    } else {
+                        linesWithKeywords.add(line1);
+                    }
+                }
             }
         }
-        return null; // Возвращаем null, если не найдено подходящее "name"
     }
 
-    // Поиск индекса ключевого слова в строке
-    private static int findKeywordIndex(String line, String[] keywords) {
+    private boolean containsKeyword(String line, String[] keywords) {
         for (String keyword : keywords) {
-            int index = line.indexOf(keyword);
-            if (index != -1) {
-                return index;
+            if (line.contains(keyword)) {
+                return true;
             }
         }
-        return -1;
+        return false;
     }
 
-    // Вывод строк с номерами
-    public static void printLinesWithNumbers(List<String> lines) {
-        for (int i = 0; i < lines.size(); i++) {
-            System.out.println("[" + (i + 1) + "] " + lines.get(i));
+    public List<String> extractLinesWithKeywordsFromFile(String filePath, String... keywords) throws IOException {
+        try (FileInputStream inputStream = new FileInputStream(filePath)) {
+            byte[] data = new byte[inputStream.available()];
+            inputStream.read(data);
+            return extractLinesWithKeywords(new String(data), keywords);
         }
     }
 }

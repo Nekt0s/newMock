@@ -16,7 +16,7 @@ public class SecretSantaGame {
         names.add("Настя");
         names.add("Дима");
         names.add("Ирина");
-        names.add("Рамиль");
+        names.add("Вася");
         names.add("Никита");
         names.add("Катя");
 
